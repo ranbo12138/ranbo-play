@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --color-background: 241 245 249;
+  --color-surface: 255 255 255;
+  --color-foreground: 15 23 42;
+  --color-muted: 100 116 139;
+  --color-border: 226 232 240;
+  --color-accent: 37 99 235;
+}
+
+.dark {
+  color-scheme: dark;
+  --color-background: 15 23 42;
+  --color-surface: 30 41 59;
+  --color-foreground: 226 232 240;
+  --color-muted: 148 163 184;
+  --color-border: 51 65 85;
+  --color-accent: 96 165 250;
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+  margin: 0;
+  font-family: 'Inter Variable', 'Inter', 'Noto Sans SC', system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 600;
+    color: inherit;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-card transition-colors;
+  }
+
+  .panel-header {
+    @apply flex items-center justify-between gap-2;
+  }
+
+  .panel-title {
+    @apply text-lg font-semibold text-foreground;
+  }
+
+  .tag {
+    @apply inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium uppercase tracking-wide text-accent;
+  }
+
+  .placeholder {
+    @apply flex flex-1 items-center justify-center rounded-xl border border-dashed border-border/70 bg-background/60 text-sm text-muted;
+  }
+}
