@@ -1,12 +1,41 @@
+import { useMemo } from 'react'
 import ChatInterface from './ChatInterface.jsx'
 import CodeEditor from './CodeEditor.jsx'
 import PreviewPanel from './PreviewPanel.jsx'
 import VariableEditor from './VariableEditor.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 
+const CODE_PLACEHOLDER = `// TODO: 生成 MVU 模板
+export const statusBar = {
+  theme: 'tailwind',
+  variables: {
+    mood: '{{ mood }}',
+    energy: '{{ energy }}',
+    focus: '{{ focus }}',
+  },
+  slots: {
+    default: [
+      '⚡ 能量值: {{ energy }}',
+      '🧠 当前状态: {{ mood | title }}',
+      '🎯 专注度: {{ focus }}',
+    ],
+  },
+}
+`
+
 const Layout = () => {
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
+
+  const codeEditorOptions = useMemo(
+    () => ({
+      lineNumbers: 'off',
+      glyphMargin: false,
+      folding: false,
+      renderLineHighlight: 'none',
+    }),
+    [],
+  )
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
@@ -52,7 +81,21 @@ const Layout = () => {
             <PreviewPanel />
           </section>
           <section className="panel lg:col-span-5">
-            <CodeEditor />
+            <div className="flex h-full flex-col gap-4">
+              <div className="panel-header">
+                <h2 className="panel-title">模板输出</h2>
+                <span className="tag">Code</span>
+              </div>
+              <p className="text-sm text-muted">
+                Tailwind 主题与 MVU 模板片段将在此生成，便于复制到 TavernAI 或其他部署环境。
+              </p>
+              <CodeEditor
+                language="javascript"
+                value={CODE_PLACEHOLDER}
+                readOnly
+                options={codeEditorOptions}
+              />
+            </div>
           </section>
         </main>
       </div>
