@@ -25,7 +25,7 @@ const getPreferredTheme = () => {
   return nextTheme
 }
 
-export const ThemeProvider = ({ children }) => {
+export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(getPreferredTheme)
 
   useEffect(() => {
@@ -51,7 +51,8 @@ export const ThemeProvider = ({ children }) => {
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
-export const useTheme = () => {
+// eslint-disable-next-line react-refresh/only-export-components
+export function useTheme() {
   const context = useContext(ThemeContext)
   if (!context) {
     throw new Error('useTheme must be used within a ThemeProvider')
