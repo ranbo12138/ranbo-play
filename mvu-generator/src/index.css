@@ -28,10 +28,15 @@ body {
   font-family: 'Inter Variable', 'Inter', 'Noto Sans SC', system-ui, -apple-system,
     BlinkMacSystemFont, 'Segoe UI', sans-serif;
   min-height: 100vh;
+  min-height: 100svh;
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 #root {
   min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
 }
 
 @layer base {
@@ -48,7 +53,7 @@ body {
 
 @layer components {
   .panel {
-    @apply flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-card transition-colors;
+    @apply flex min-h-0 flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-card transition-colors;
   }
 
   .panel-header {
@@ -64,6 +69,60 @@ body {
   }
 
   .placeholder {
-    @apply flex flex-1 items-center justify-center rounded-xl border border-dashed border-border/70 bg-background/60 text-sm text-muted;
+    @apply flex flex-1 min-h-[160px] items-center justify-center rounded-xl border border-dashed border-border/70 bg-background/60 text-sm text-muted;
+  }
+
+  .split-pane {
+    @apply relative flex min-h-0 min-w-0;
+  }
+
+  .split-pane--horizontal {
+    @apply flex-row;
+  }
+
+  .split-pane--vertical {
+    @apply flex-col;
+  }
+
+  .split-pane-pane {
+    @apply flex min-h-0 min-w-0 flex-1;
+  }
+
+  .split-pane-divider {
+    @apply relative flex shrink-0 items-center justify-center bg-border/60 transition-colors duration-200 hover:bg-accent/30 focus-visible:bg-accent/40 focus-visible:outline-none;
+    touch-action: none;
+  }
+
+  .split-pane-divider-horizontal {
+    @apply w-4 cursor-col-resize border-x border-border/70;
+  }
+
+  .split-pane-divider-vertical {
+    @apply h-4 cursor-row-resize border-y border-border/70;
+  }
+
+  .split-pane-grip {
+    @apply pointer-events-none h-8 w-1.5 rounded-full bg-border/80;
+  }
+
+  .mobile-dock {
+    @apply sticky bottom-0 left-0 right-0 z-30 flex items-center justify-between gap-2 rounded-2xl border border-border bg-surface/95 px-4 py-3 text-sm shadow-card backdrop-blur;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+  }
+
+  .mobile-dock__button {
+    @apply inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-transparent bg-background/80 text-sm font-medium text-foreground transition hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50;
+  }
+
+  .mobile-dock__button--active {
+    @apply border-accent bg-accent/10 text-accent shadow-inner;
+  }
+
+  .tablet-drawer {
+    @apply flex h-[min(90vh,560px)] w-full max-w-md flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-card transition-transform duration-300 ease-out;
+  }
+
+  .tablet-drawer__backdrop {
+    @apply absolute inset-0 z-20 bg-background/60 backdrop-blur-sm transition-opacity duration-200;
   }
 }

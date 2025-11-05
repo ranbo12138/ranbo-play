@@ -27,7 +27,7 @@ const VariableEditor = () => {
   }, [])
 
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
       <div className="panel-header">
         <h2 className="panel-title">变量编辑器</h2>
         <span className="tag">Variables</span>
@@ -35,7 +35,9 @@ const VariableEditor = () => {
       <p className="text-sm text-muted">
         整理 MVU 所需的变量、状态与映射。未来将在此支持 YAML、TOML 及 JSON5 的互转与校验。
       </p>
-      <CodeEditor language="yaml" value={source} onChange={handleChange} options={editorOptions} />
+      <div className="flex min-h-0 flex-1">
+        <CodeEditor language="yaml" value={source} onChange={handleChange} options={editorOptions} />
+      </div>
     </div>
   )
 }

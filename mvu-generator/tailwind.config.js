@@ -12,6 +12,12 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      screens: {
+        xs: '430px',
+        tablet: '768px',
+        desktop: '1024px',
+        wide: '1280px',
+      },
       colors: {
         background: withOpacityValue('--color-background'),
         surface: withOpacityValue('--color-surface'),
