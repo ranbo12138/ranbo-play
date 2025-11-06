@@ -1,5 +1,6 @@
 const STORAGE_NAMESPACE = 'mvu-generator'
 const PREVIEW_CODE_KEY = `${STORAGE_NAMESPACE}:preview:code`
+const VARIABLE_SOURCE_KEY = `${STORAGE_NAMESPACE}:variables:source`
 
 const isBrowser = typeof window !== 'undefined'
 
@@ -92,8 +93,23 @@ export function clearPreviewCode() {
   return writeString(PREVIEW_CODE_KEY, null)
 }
 
+export function getVariableSource() {
+  return readString(VARIABLE_SOURCE_KEY, '')
+}
+
+export function saveVariableSource(source) {
+  return writeString(VARIABLE_SOURCE_KEY, source)
+}
+
+export function clearVariableSource() {
+  return writeString(VARIABLE_SOURCE_KEY, null)
+}
+
 export default {
   getPreviewCode,
   savePreviewCode,
   clearPreviewCode,
+  getVariableSource,
+  saveVariableSource,
+  clearVariableSource,
 }
