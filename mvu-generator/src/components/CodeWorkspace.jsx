@@ -111,9 +111,10 @@ const CodeWorkspace = () => {
       <SplitPane
         leftContent={leftContent}
         rightContent={rightContent}
-        minLeftWidth={300}
-        minRightWidth={300}
+        minLeftWidth={280}
+        minRightWidth={280}
         defaultSplit={50}
+        storageKey="codePreview"
       />
     </div>
   )
