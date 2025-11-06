@@ -1,31 +1,40 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import ChatInterface from './ChatInterface.jsx'
 import CodeEditor from './CodeEditor.jsx'
 import PreviewPanel from './PreviewPanel.jsx'
 import VariableEditor from './VariableEditor.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
+import { useAppState } from '../context/AppStateContext.jsx'
 
-const CODE_PLACEHOLDER = `// TODO: 生成 MVU 模板
-export const statusBar = {
-  theme: 'tailwind',
-  variables: {
-    mood: '{{ mood }}',
-    energy: '{{ energy }}',
-    focus: '{{ focus }}',
-  },
-  slots: {
-    default: [
-      '⚡ 能量值: {{ energy }}',
-      '🧠 当前状态: {{ mood | title }}',
-      '🎯 专注度: {{ focus }}',
-    ],
-  },
+const formatTimestamp = (value) => {
+  if (!value) return ''
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(new Date(value))
+  } catch {
+    return value
+  }
 }
-`
+
+const OUTPUT_TABS = {
+  html: { label: 'HTML Bundle', language: 'html' },
+  yaml: { label: 'World Book YAML', language: 'yaml' },
+  script: { label: 'Tavern Script', language: 'javascript' },
+  regex: { label: '正则配置', language: 'plaintext' },
+}
 
 const Layout = () => {
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
+  const { state } = useAppState()
+  const { generatedArtifacts = {}, generationMeta } = state
+  const [activeTab, setActiveTab] = useState('html')
 
   const codeEditorOptions = useMemo(
     () => ({
@@ -36,6 +45,10 @@ const Layout = () => {
     }),
     [],
   )
+
+  const activeConfig = OUTPUT_TABS[activeTab] ?? OUTPUT_TABS.html
+  const editorValue = generatedArtifacts[activeTab] ?? ''
+  const hasContent = Boolean(editorValue && editorValue.trim().length > 0)
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
@@ -87,14 +100,37 @@ const Layout = () => {
                 <span className="tag">Code</span>
               </div>
               <p className="text-sm text-muted">
-                Tailwind 主题与 MVU 模板片段将在此生成，便于复制到 TavernAI 或其他部署环境。
+                选择下方标签查看生成的 HTML、世界书 YAML、Tavern 脚本或正则配置，便于复制到 TavernAI 或其他部署环境。
               </p>
-              <CodeEditor
-                language="javascript"
-                value={CODE_PLACEHOLDER}
-                readOnly
-                options={codeEditorOptions}
-              />
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(OUTPUT_TABS).map(([key, config]) => {
+                  const isActive = key === activeTab
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setActiveTab(key)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        isActive
+                          ? 'border-accent bg-accent text-white shadow'
+                          : 'border-border bg-background text-muted hover:border-accent/60 hover:text-accent'
+                      }`}
+                    >
+                      {config.label}
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+                <span>当前视图：{activeConfig.label}</span>
+                {generationMeta?.generatedAt && <span>生成时间：{formatTimestamp(generationMeta.generatedAt)}</span>}
+              </div>
+              {!hasContent && (
+                <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-2 text-xs text-muted">
+                  生成输出后将在此显示代码片段。
+                </div>
+              )}
+              <CodeEditor language={activeConfig.language} value={editorValue} readOnly options={codeEditorOptions} />
             </div>
           </section>
         </main>

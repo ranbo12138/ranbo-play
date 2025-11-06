@@ -1,17 +1,28 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import CodeEditor from './CodeEditor.jsx'
+import { useAppState } from '../context/AppStateContext.jsx'
 
-const INITIAL_YAML = `metadata:
-  title: Tavern 状态栏示例
-  version: 0.1.0
-variables:
-  mood: neutral
-  energy: 0
-  focus: 50
-`
+const formatTimestamp = (value) => {
+  if (!value) return ''
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date(value))
+  } catch {
+    return value
+  }
+}
 
 const VariableEditor = () => {
-  const [source, setSource] = useState(INITIAL_YAML)
+  const {
+    state: { variableSource, variableParseError, statData, lastParsedAt },
+    actions: { updateVariableSource },
+  } = useAppState()
 
   const editorOptions = useMemo(
     () => ({
@@ -22,9 +33,25 @@ const VariableEditor = () => {
     [],
   )
 
-  const handleChange = useCallback((nextValue) => {
-    setSource(nextValue ?? '')
-  }, [])
+  const handleChange = useCallback(
+    (nextValue) => {
+      updateVariableSource(nextValue ?? '')
+    },
+    [updateVariableSource],
+  )
+
+  const statHighlights = useMemo(() => {
+    if (!statData || typeof statData !== 'object') {
+      return []
+    }
+    return Object.keys(statData).slice(0, 6)
+  }, [statData])
+
+  const parseStatus = variableParseError
+    ? `解析错误：${variableParseError}`
+    : lastParsedAt
+    ? `上次解析：${formatTimestamp(lastParsedAt)}`
+    : '尚未解析有效变量'
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -35,7 +62,15 @@ const VariableEditor = () => {
       <p className="text-sm text-muted">
         整理 MVU 所需的变量、状态与映射。未来将在此支持 YAML、TOML 及 JSON5 的互转与校验。
       </p>
-      <CodeEditor language="yaml" value={source} onChange={handleChange} options={editorOptions} />
+      <div className="flex items-center justify-between text-xs text-muted">
+        <span className={variableParseError ? 'text-red-500' : undefined}>{parseStatus}</span>
+        {statHighlights.length > 0 ? (
+          <span>stat_data 键：{statHighlights.join('、')}</span>
+        ) : (
+          <span>等待有效的 stat_data 结构</span>
+        )}
+      </div>
+      <CodeEditor language="yaml" value={variableSource} onChange={handleChange} options={editorOptions} />
     </div>
   )
 }
