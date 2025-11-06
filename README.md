@@ -1,144 +1,439 @@
-# ranbo-play MVU 状态栏生成器
+<div align="center">
 
-## 项目概览
+# 🎨 ranbo-play
 
-### 项目简介
-ranbo-play 是一款专为 TavernAI / SillyTavern 场景打造的 MVU（MagVarUpdate）状态栏生成器。项目集成代码编辑、变量校验、AI 助手与预览沙箱能力，帮助开发者快速搭建可视化的状态栏与世界书条目，并保证与现有 MVU 变量体系的兼容性。
+### MVU 状态栏生成器 · AI 协作编程工作台
 
-### 主要特性
-- **Monaco 代码编辑器**：支持 YAML / HTML / CSS / JavaScript，多标签编辑与语法高亮。
-- **AI 助手集成**：兼容 OpenAI 生态 API，可在应用内配置模型、Base URL 与密钥。
-- **MVU 变量解析与验证**：内置 YAML 解析、结构校验及错误定位，保障 `stat_data` 数据质量。
-- **实时预览沙箱**：通过 iframe 隔离运行生成的状态栏，自动同步变量与样式。
-- **代码生成器**：一键生成状态栏 HTML / CSS / JS 以及 Tavern world book YAML 和正则模板。
-- **响应式布局**：适配移动端、平板与桌面端的多列布局。
-- **浅色 / 深色主题**：内置主题切换，支持即时预览。
-- **本地数据持久化**：使用 `localStorage` 存储编辑内容和变量源数据，防止误关闭导致的丢失。
+<p align="center">
+  <strong>边写代码边和 AI 聊天，让 AI 读懂你的工作区，实时协作开发</strong>
+</p>
+
+<p align="center">
+  <a href="#-一键部署">一键部署</a> •
+  <a href="#-核心特性">核心特性</a> •
+  <a href="#-新手教程">新手教程</a> •
+  <a href="#-ai-协作编程">AI 协作</a> •
+  <a href="#-常见问题">常见问题</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/license/ranbo12138/ranbo-play?style=flat-square" alt="License">
+  <img src="https://img.shields.io/github/stars/ranbo12138/ranbo-play?style=flat-square" alt="Stars">
+  <img src="https://img.shields.io/github/forks/ranbo12138/ranbo-play?style=flat-square" alt="Forks">
+  <img src="https://img.shields.io/docker/pulls/ranbo12138/ranbo-play?style=flat-square" alt="Docker Pulls">
+</p>
+
+</div>
 
 ---
 
-## 快速开始
+## 📖 这是什么？
 
-### 前置要求
-- Node.js ≥ 18（建议使用 LTS 版本）
-- npm 或 yarn 环境
+ranbo-play 是一款**零门槛**的 MVU 状态栏生成器，专为 TavernAI / SillyTavern 用户打造。
 
-### 安装与运行
+### 🌟 最大亮点
+
+**🤖 AI 能读懂你的代码！**  
+不是简单的聊天机器人，AI 助手可以**实时读取你的工作区内容**（HTML、CSS、JS、YAML 变量），理解你正在做什么，提供精准的代码建议和修改方案。真正的 **Vibe Coding** 体验！
+
+**☁️ 小白友好部署！**  
+无需安装 Node.js、Git 或任何开发工具，只需在容器云平台（Zeabur、Railway、Render 等）**一键拉取镜像**，3 分钟完成部署，立即使用！
+
+---
+
+## 🚀 一键部署（推荐小白）
+
+### 方式一：Zeabur（推荐）
+
+[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates)
+
+1. 点击上方按钮，登录 Zeabur
+2. 选择 **Docker Image** 部署方式
+3. 填写镜像地址：`ghcr.io/ranbo12138/ranbo-play:latest`
+4. 点击部署，等待 1-2 分钟
+5. 获取访问链接，开始使用！
+
+💡 **Zeabur 提供免费额度**，足够个人使用。
+
+### 方式二：Railway
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new)
+
+1. 点击按钮，登录 Railway
+2. 选择 **Deploy from Docker Image**
+3. 镜像地址：`ghcr.io/ranbo12138/ranbo-play:latest`
+4. 部署完成后访问生成的域名
+
+### 方式三：Render
+
+1. 访问 [Render Dashboard](https://dashboard.render.com/)
+2. 创建新的 **Web Service**
+3. 选择 **Deploy an existing image from a registry**
+4. 镜像 URL：`ghcr.io/ranbo12138/ranbo-play:latest`
+5. 选择免费计划，点击 **Create Web Service**
+
+### 方式四：其他容器云平台
+
+支持任何兼容 Docker 的平台，镜像地址：
+```
+ghcr.io/ranbo12138/ranbo-play:latest
+```
+
+---
+
+## ✨ 核心特性
+
+| 功能 | 说明 |
+|------|------|
+| 🧠 **AI 上下文感知** | AI 可读取工作区所有代码和变量，提供精准建议 |
+| 💬 **Vibe Coding** | 边写代码边和 AI 聊天，实时协作开发 |
+| 🖥️ **Monaco 编辑器** | VS Code 同款编辑器，支持多语言语法高亮 |
+| ✅ **智能校验** | 实时检测 YAML 格式错误，精确定位问题 |
+| 👁️ **实时预览** | 修改代码立即看到效果，所见即所得 |
+| 📦 **一键导出** | 自动生成 Tavern 世界书、正则表达式和完整代码 |
+| 🎨 **主题切换** | 浅色/深色模式，保护眼睛 |
+| 💾 **自动保存** | 本地存储，关闭浏览器也不怕丢失 |
+| 📱 **全平台适配** | 手机、平板、电脑完美适配 |
+
+---
+
+## 🤖 AI 协作编程
+
+### 什么是 Vibe Coding？
+
+传统 AI 助手只能回答问题，但 ranbo-play 的 AI 能**看到你的整个工作区**：
+
+- 📄 你正在编辑的 HTML/CSS/JS 代码
+- 📊 你定义的 YAML 变量结构
+- 🎨 当前的样式和布局配置
+
+### 实际使用场景
+
+**场景 1：修改现有代码**
+```
+你：把生命值进度条改成红色渐变
+AI：[读取你的 CSS] 我看到你的进度条在 .health-bar 类中，
+    建议修改为：background: linear-gradient(90deg, #ff0000, #cc0000);
+```
+
+**场景 2：添加新功能**
+```
+你：我想在状态栏底部加一个经验值显示
+AI：[读取你的 YAML 变量] 我看到你已经定义了 exp 和 max_exp 变量，
+    我帮你生成对应的 HTML 和 CSS 代码...
+```
+
+**场景 3：调试问题**
+```
+你：为什么魔法值不显示？
+AI：[读取你的代码] 我发现你的 YAML 中变量名是 mana，
+    但 HTML 中引用的是 magic，需要统一命名。
+```
+
+### 如何配置 AI
+
+1. 点击右上角 **⚙️ API 设置**
+2. 填写配置：
+   - **API Key**：你的 OpenAI API 密钥（[获取地址](https://platform.openai.com/api-keys)）
+   - **Base URL**：默认 `https://api.openai.com/v1`（可使用代理或第三方服务）
+   - **Model**：推荐 `gpt-4o-mini`（性价比高）或 `gpt-4`（效果更好）
+3. 保存后即可开始协作编程
+
+💡 **提示**：支持所有兼容 OpenAI API 的服务（如 Azure OpenAI、国内代理等）
+
+---
+
+## 📚 新手教程
+
+### 第一步：部署应用
+
+选择上面的[一键部署](#-一键部署推荐小白)方式，获得你的专属网址。
+
+### 第二步：配置 AI（可选但推荐）
+
+按照 [AI 协作编程](#-ai-协作编程) 章节配置 API，解锁完整功能。
+
+### 第三步：创建你的第一个状态栏
+
+#### 方法 A：使用示例模板（最简单）
+
+1. 点击左侧 **"加载示例变量"** 按钮
+2. 右侧预览区自动显示效果
+3. 点击 **"生成输出"** 获取代码
+4. 复制到 Tavern 世界书中使用
+
+#### 方法 B：让 AI 帮你做（推荐）
+
+1. 在聊天区域描述需求：
+   ```
+   帮我创建一个角色状态栏，包括：
+   - 生命值（红色进度条）
+   - 魔法值（蓝色进度条）
+   - 等级和经验值
+   - 使用深色主题
+   ```
+2. AI 会读取你的工作区，生成完整代码
+3. 将代码粘贴到编辑器
+4. 在预览区查看效果，继续和 AI 调整细节
+
+#### 方法 C：导入现有配置
+
+如果你已有 Tavern 的 `[initvar]` 条目：
+
+1. 点击 **"粘贴 [initvar] 内容"**
+2. 粘贴你的配置
+3. 自动转换为标准格式
+
+### 第四步：导出到 Tavern
+
+1. 点击 **"生成输出"**
+2. 复制生成的内容：
+   - **Tavern World Book YAML**：世界书条目
+   - **正则模板**：变量匹配规则
+   - **HTML/CSS/JS**：状态栏代码
+3. 在 Tavern 中创建世界书条目，粘贴对应内容
+4. 保存并测试
+
+---
+
+## 🛠️ 本地开发（开发者）
+
+如果你想修改源码或本地调试：
+
+### 环境要求
+- Node.js ≥ 18
+
+### 安装运行
 ```bash
+# 克隆项目
 git clone https://github.com/ranbo12138/ranbo-play.git
 cd ranbo-play
+
+# 安装依赖
 npm install
+
+# 启动开发服务器
 npm run dev
 ```
-- 访问 `http://localhost:5173` 即可预览开发环境。
 
-### 构建与预览
-- 构建生产版本：
-  ```bash
-  npm run build
-  ```
-- 预览构建结果：
-  ```bash
-  npm run preview
-  ```
+访问 `http://localhost:5173`
 
----
-
-## 配置说明
-
-### API 配置
-- 打开应用右上角的 **API 设置** 面板，填写以下信息：
-  - **API Key**：OpenAI 兼容服务的访问密钥。
-  - **Base URL**：默认指向 `https://api.openai.com/v1`，可自定义为代理或第三方服务。
-  - **Model**：模型名称，例如 `gpt-4o-mini`、`gpt-4.1` 等。
-- 所有配置均保存在浏览器 `localStorage`，仅对当前设备生效。
-
-### 数据存储
-- 应用使用命名空间 `mvu-generator` 进行本地持久化：
-  - `mvu-generator:preview:code`：代码工作区内容。
-  - `mvu-generator:variables:source`：变量编辑器中的 YAML 数据源。
-- 清除数据可在浏览器开发者工具中执行：
-  ```js
-  localStorage.removeItem('mvu-generator:preview:code')
-  localStorage.removeItem('mvu-generator:variables:source')
-  ```
-
-### 主题切换
-- 页面顶部提供浅色 / 深色模式切换按钮，状态同样存储于 `localStorage`，刷新后自动恢复。
-
----
-
-## 使用指南
-
-### 变量编辑器
-1. 在左侧变量面板中粘贴或编写符合 MVU 规范的 YAML `stat_data`。
-2. 点击“加载示例变量”快速获取参考结构。
-3. 如果已有 Tavern `[initvar]` 条目，可使用“粘贴 [initvar] 内容”按钮，自动清洗并转化为 YAML。
-4. 解析错误会显示行列位置，请及时修复后再进行代码生成。
-
-### AI 聊天助手
-1. 在“聊天调试”区域配置 API 凭证和模型。
-2. 描述所需的状态栏布局、变量展示方式或世界书需求。
-3. 将模型返回的建议粘贴到“AI 建议”区域，可在生成代码时作为注释保留。
-
-### 代码生成与预览
-1. 根据需求调整组件名称、主题色、布局方式等选项。
-2. 点击“生成输出”获取 HTML / CSS / JS / Tavern world book / 正则模板等代码片段。
-3. 右侧预览沙箱会自动注入生成的资源，并通过 `postMessage` 与父页面通信，实时展示状态栏效果。
-4. 可导出代码用于 Tavern 世界书或自定义前端项目。
-
----
-
-## Docker 部署
-
-### 本地构建与运行
+### 可用命令
 ```bash
-docker build -t ranbo-play .
-docker run -p 8080:80 ranbo-play
+npm run dev       # 开发模式
+npm run build     # 构建生产版本
+npm run preview   # 预览构建结果
+npm run lint      # 代码检查
 ```
-- 构建完成后访问 `http://localhost:8080`。
+
+---
+
+## 🐳 Docker 部署（进阶）
+
+### 使用预构建镜像
+
+```bash
+docker pull ghcr.io/ranbo12138/ranbo-play:latest
+docker run -d -p 8080:80 ghcr.io/ranbo12138/ranbo-play:latest
+```
+
+访问 `http://localhost:8080`
 
 ### 使用 docker-compose
-仓库提供 `docker-compose.yml`，可直接启动：
+
+```yaml
+version: '3'
+services:
+  ranbo-play:
+    image: ghcr.io/ranbo12138/ranbo-play:latest
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+```
+
+启动：
 ```bash
 docker-compose up -d
 ```
 
-### 从 GHCR 拉取镜像
+### 本地构建
+
 ```bash
-docker pull ghcr.io/ranbo12138/ranbo-play:latest
-docker run -p 8080:80 ghcr.io/ranbo12138/ranbo-play:latest
+docker build -t ranbo-play .
+docker run -d -p 8080:80 ranbo-play
 ```
-- 根据 CI 流程亦可拉取 PR 或版本标签镜像（详见后文）。
 
 ---
 
-## CI/CD 说明
-- 项目使用 GitHub Actions 自动化构建与发布 Docker 镜像。
-- 拉取请求（PR）会生成预览镜像：`ghcr.io/ranbo12138/ranbo-play:pr-<number>`。
-- `main` 分支合并后自动更新稳定镜像：`ghcr.io/ranbo12138/ranbo-play:latest`。
-- 发布版本时会推送带语义化标签的镜像，例如：`ghcr.io/ranbo12138/ranbo-play:v1.0.0`。
+## ❓ 常见问题
+
+<details>
+<summary><strong>Q: 我完全不会编程，能用吗？</strong></summary>
+
+**A:** 完全可以！推荐流程：
+1. 使用容器云一键部署（无需安装任何软件）
+2. 配置 AI 助手
+3. 用自然语言告诉 AI 你想要什么
+4. AI 会帮你生成所有代码
+
+全程不需要写一行代码！
+</details>
+
+<details>
+<summary><strong>Q: AI 真的能读懂我的代码吗？</strong></summary>
+
+**A:** 是的！当你和 AI 聊天时，系统会自动把你的工作区内容（HTML、CSS、JS、YAML 变量）发送给 AI，所以 AI 能：
+- 看到你当前的代码结构
+- 理解你定义的变量
+- 基于现有代码提供精准建议
+- 帮你调试和优化
+
+这就是 Vibe Coding 的魅力！
+</details>
+
+<details>
+<summary><strong>Q: 需要付费吗？</strong></summary>
+
+**A:** 
+- **应用本身**：完全免费开源
+- **部署**：容器云平台通常提供免费额度（如 Zeabur、Railway）
+- **AI 功能**：需要 OpenAI API Key（按使用量付费，`gpt-4o-mini` 非常便宜）
+
+你也可以不配置 AI，手动编辑代码，所有其他功能照常使用。
+</details>
+
+<details>
+<summary><strong>Q: 支持哪些 AI 服务？</strong></summary>
+
+**A:** 支持所有兼容 OpenAI API 格式的服务：
+- ✅ OpenAI 官方
+- ✅ Azure OpenAI
+- ✅ 国内代理服务（如 API2D、OpenAI-SB 等）
+- ✅ 自建代理（如 new-api、one-api）
+- ✅ 其他兼容服务（Claude via API、Gemini via API 等）
+
+只需修改 Base URL 和 API Key 即可。
+</details>
+
+<details>
+<summary><strong>Q: 数据安全吗？</strong></summary>
+
+**A:** 
+- ✅ 所有编辑内容保存在**你的浏览器本地**，不上传服务器
+- ✅ API Key 保存在**浏览器 localStorage**，仅你可见
+- ✅ 与 AI 的对话通过你配置的 API 直连，不经过第三方
+- ⚠️ 建议定期导出重要配置作为备份
+</details>
+
+<details>
+<summary><strong>Q: 容器云部署后如何更新版本？</strong></summary>
+
+**A:** 
+1. 在容器云平台找到你的服务
+2. 重新部署或触发重启
+3. 系统会自动拉取最新的 `latest` 镜像
+
+或者指定版本号：`ghcr.io/ranbo12138/ranbo-play:v1.0.0`
+</details>
+
+<details>
+<summary><strong>Q: 为什么 AI 回复很慢？</strong></summary>
+
+**A:** 可能原因：
+- 网络延迟（特别是使用国外 API）
+- 选择的模型较大（如 `gpt-4`）
+- API 服务繁忙
+
+建议：
+- 使用国内代理服务
+- 选择 `gpt-4o-mini` 模型（速度快且便宜）
+- 检查 Base URL 配置是否正确
+</details>
+
+<details>
+<summary><strong>Q: 如何清除所有数据？</strong></summary>
+
+**A:** 按 F12 打开浏览器控制台，输入：
+```javascript
+localStorage.clear()
+location.reload()
+```
+</details>
 
 ---
 
-## 故障排除
-- **Monaco 编辑器加载缓慢**：首次加载时需要初始化 Web Workers，网络较慢时可提前预热或使用本地 CDN。
-- **CORS 错误**：自定义 API Base URL 时需确保目标服务允许浏览器跨域访问，必要时配置反向代理。
-- **iframe 沙箱报错**：预览沙箱使用严格的 `sandbox` 与 CSP 设置，若引入外部脚本需确保允许域名并避免内联危险代码。
-- **localStorage 数据丢失**：浏览器隐私模式或清理策略会清空本地存储，建议定期导出代码与变量备份。
+## 🎯 使用技巧
+
+### 💡 与 AI 协作的最佳实践
+
+1. **描述要具体**：不要说"改好看点"，而是"把进度条改成圆角，加上阴影效果"
+2. **分步骤进行**：先让 AI 生成基础结构，再逐步优化细节
+3. **善用预览**：每次修改后看预览效果，再告诉 AI 需要调整什么
+4. **保存版本**：满意的版本及时导出备份
+
+### 🎨 状态栏设计建议
+
+- 使用对比色区分不同属性（生命值红色、魔法值蓝色）
+- 进度条加上数值显示（如 "80/100"）
+- 深色主题更适合长时间使用
+- 移动端注意字体大小和间距
 
 ---
 
-## 开发者注意事项
-- **npm scripts**：
-  - `npm run dev`：启动 Vite 开发服务器。
-  - `npm run build`：构建生产资源。
-  - `npm run preview`：本地预览构建产物。
-  - `npm run lint`：运行 ESLint 检查代码质量。
-- **代码规范**：
-  - 项目使用 `eslint.config.js` 配置 ESLint，集成 React Hooks 与 React Refresh 插件。
-  - 禁止存在未使用变量，若需保留常量请使用全大写命名并符合 `^[A-Z_]` 规则。
-- **localStorage 命名规范**：所有键以 `mvu-generator:` 为前缀，新增持久化数据时需沿用命名空间并提供清除方法。
-- **贡献指南**：欢迎通过 Fork + PR 的方式贡献代码，提交前请确保通过 `npm run lint` 并附带必要的文档更新。
+## 🔄 CI/CD
 
-更多背景与使用示例可参见 [`docs/`](./docs) 目录中的教程与扩展资料。
+项目使用 GitHub Actions 自动构建 Docker 镜像：
+
+- **PR 预览**：`ghcr.io/ranbo12138/ranbo-play:pr-<number>`
+- **主分支**：`ghcr.io/ranbo12138/ranbo-play:latest`
+- **版本发布**：`ghcr.io/ranbo12138/ranbo-play:v1.0.0`
+
+---
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+### 贡献流程
+1. Fork 本仓库
+2. 创建特性分支：`git checkout -b feature/amazing-feature`
+3. 提交更改：`git commit -m 'Add amazing feature'`
+4. 推送分支：`git push origin feature/amazing-feature`
+5. 提交 Pull Request
+
+提交前请运行 `npm run lint` 确保代码质量。
+
+---
+
+## 📄 许可证
+
+本项目采用 [MIT License](LICENSE) 开源协议。
+
+---
+
+## 🙏 致谢
+
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - 强大的代码编辑器
+- [TavernAI](https://github.com/TavernAI/TavernAI) / [SillyTavern](https://github.com/SillyTavern/SillyTavern) - 灵感来源
+- 所有贡献者和用户
+
+---
+
+## 📞 获取帮助
+
+- 🐛 [报告 Bug](https://github.com/ranbo12138/ranbo-play/issues)
+- 💡 [功能建议](https://github.com/ranbo12138/ranbo-play/issues)
+- 📖 [查看文档](./docs)
+- 💬 [讨论区](https://github.com/ranbo12138/ranbo-play/discussions)
+
+---
+
+<div align="center">
+
+### ⭐ 如果这个项目对你有帮助，请给个 Star 支持一下！
+
+**让 AI 成为你的编程伙伴，一起 Vibe Coding！**
+
+Made with ❤️ by [ranbo12138](https://github.com/ranbo12138)
+
+</div>
