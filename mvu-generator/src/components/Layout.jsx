@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import ChatInterface from './ChatInterface.jsx'
 import CodeEditor from './CodeEditor.jsx'
-import PreviewPanel from './PreviewPanel.jsx'
+import CodeWorkspace from './CodeWorkspace.jsx'
 import VariableEditor from './VariableEditor.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useAppState } from '../context/AppStateContext.jsx'
@@ -90,9 +90,6 @@ const Layout = () => {
           <section className="panel lg:col-span-5">
             <ChatInterface />
           </section>
-          <section className="panel lg:col-span-4 lg:row-span-2">
-            <PreviewPanel />
-          </section>
           <section className="panel lg:col-span-5">
             <div className="flex h-full flex-col gap-4">
               <div className="panel-header">
@@ -132,6 +129,9 @@ const Layout = () => {
               )}
               <CodeEditor language={activeConfig.language} value={editorValue} readOnly options={codeEditorOptions} />
             </div>
+          </section>
+          <section className="panel lg:col-span-9 lg:row-span-1 min-h-[500px]">
+            <CodeWorkspace />
           </section>
         </main>
       </div>
