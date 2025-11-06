@@ -159,7 +159,7 @@ export function getApiSettings() {
 
 export function saveApiSettings(settings = {}) {
   if (typeof settings !== 'object' || settings === null) {
-    throw new Error('saveApiSettings expects an object payload');
+    throw new Error('saveApiSettings 需要传入对象参数');
   }
 
   const { apiKey, encodedKey, ...rest } = settings;
@@ -211,7 +211,7 @@ export function getChatHistory() {
 
 export function saveChatHistory(messages = []) {
   if (!Array.isArray(messages)) {
-    throw new Error('saveChatHistory expects an array of messages');
+    throw new Error('saveChatHistory 需要传入消息数组');
   }
 
   const sanitised = messages.map(normaliseHistoryMessage).filter(Boolean);

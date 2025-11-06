@@ -94,7 +94,7 @@ const Layout = () => {
             <div className="flex h-full flex-col gap-4">
               <div className="panel-header">
                 <h2 className="panel-title">模板输出</h2>
-                <span className="tag">Code</span>
+                <span className="tag">代码</span>
               </div>
               <p className="text-sm text-muted">
                 选择下方标签查看生成的 HTML、世界书 YAML、Tavern 脚本或正则配置，便于复制到 TavernAI 或其他部署环境。

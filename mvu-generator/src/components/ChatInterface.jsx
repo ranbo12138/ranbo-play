@@ -77,7 +77,7 @@ const ChatInterface = () => {
     <div className="flex h-full flex-col gap-4">
       <div className="panel-header">
         <h2 className="panel-title">对话调试</h2>
-        <span className="tag">Chat Ops</span>
+        <span className="tag">聊天调试</span>
       </div>
       <p className="text-sm text-muted">
         粘贴 AI 输出或自定义提示，引导代码生成器产出状态栏模板、世界书条目与 Tavern 脚本。

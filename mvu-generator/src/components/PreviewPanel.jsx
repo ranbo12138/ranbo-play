@@ -71,7 +71,7 @@ const PreviewPanel = () => {
     <div className="flex h-full flex-col gap-4">
       <div className="panel-header">
         <h2 className="panel-title">实时预览</h2>
-        <span className="tag">Preview</span>
+        <span className="tag">预览</span>
       </div>
       <p className="text-sm text-muted">
         基于当前 stat_data 变量快速预览状态栏呈现。宏会被示例值替换，但内联脚本不会在此运行。
