@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import ChatInterface from './ChatInterface.jsx'
 import CodeEditor from './CodeEditor.jsx'
 import CodeWorkspace from './CodeWorkspace.jsx'
 import VariableEditor from './VariableEditor.jsx'
-import MobileNavigation from './MobileNavigation.jsx'
+import HamburgerMenu from './HamburgerMenu.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useAppState } from '../context/AppStateContext.jsx'
 
@@ -38,6 +38,18 @@ const Layout = () => {
   const [activeTab, setActiveTab] = useState('html')
   const [mobileActivePanel, setMobileActivePanel] = useState('variables')
 
+  // Load and save mobile active panel to localStorage
+  useEffect(() => {
+    const savedPanel = localStorage.getItem('mvu-generator:mobileActivePanel')
+    if (savedPanel && ['variables', 'chat', 'code', 'preview'].includes(savedPanel)) {
+      setMobileActivePanel(savedPanel)
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('mvu-generator:mobileActivePanel', mobileActivePanel)
+  }, [mobileActivePanel])
+
   const codeEditorOptions = useMemo(
     () => ({
       lineNumbers: 'off',
@@ -53,14 +65,16 @@ const Layout = () => {
   const hasContent = Boolean(editorValue && editorValue.trim().length > 0)
 
   const renderMobileContent = () => {
+    const commonPanelClass = "h-full mobile-panel scrollbar-thin"
+    
     switch (mobileActivePanel) {
       case 'variables':
-        return <VariableEditor />
+        return <div className={commonPanelClass}><VariableEditor /></div>
       case 'chat':
-        return <ChatInterface />
+        return <div className={commonPanelClass}><ChatInterface /></div>
       case 'code':
         return (
-          <div className="flex h-full flex-col gap-4">
+          <div className={`${commonPanelClass} flex flex-col gap-4 p-4`}>
             <div className="panel-header">
               <h2 className="panel-title">模板输出</h2>
               <span className="tag">代码</span>
@@ -102,9 +116,9 @@ const Layout = () => {
           </div>
         )
       case 'preview':
-        return <CodeWorkspace />
+        return <div className={commonPanelClass}><CodeWorkspace /></div>
       default:
-        return <VariableEditor />
+        return <div className={commonPanelClass}><VariableEditor /></div>
     }
   }
 
@@ -113,14 +127,22 @@ const Layout = () => {
       <div className="mx-auto flex h-full max-w-7xl flex-col gap-4 px-3 py-4 sm:px-4 sm:py-6 md:gap-6 md:px-6 lg:px-8">
         {/* Header */}
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1 sm:space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent/80">
-              MVU 状态栏生成器
-            </p>
-            <h1 className="text-2xl font-semibold sm:text-3xl lg:text-4xl">变量驱动的 TavernAI 体验</h1>
-            <p className="text-xs text-muted sm:text-sm">
-              在统一的工作区中编排变量、调试对话并预览实际渲染的状态栏。
-            </p>
+          <div className="flex items-start gap-3 sm:gap-4">
+            {/* Hamburger Menu - Mobile Only */}
+            <HamburgerMenu 
+              activePanel={mobileActivePanel} 
+              onPanelChange={setMobileActivePanel} 
+            />
+            
+            <div className="space-y-1 sm:space-y-2 flex-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent/80">
+                MVU 状态栏生成器
+              </p>
+              <h1 className="text-2xl font-semibold sm:text-3xl lg:text-4xl">变量驱动的 TavernAI 体验</h1>
+              <p className="text-xs text-muted sm:text-sm">
+                在统一的工作区中编排变量、调试对话并预览实际渲染的状态栏。
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2 self-start rounded-full border border-border bg-surface px-2 py-1.5 shadow-card sm:gap-3 sm:px-3 sm:py-2 sm:self-auto">
             <span className="text-xs font-medium uppercase tracking-wide text-muted">主题</span>
@@ -146,10 +168,8 @@ const Layout = () => {
         {/* Main Content */}
         <main className="main-content flex-1 min-h-0 responsive-transition">
           {/* Mobile Layout */}
-          <div className="h-full md:hidden mobile-content-height">
-            <div className="h-full pb-16">
-              {renderMobileContent()}
-            </div>
+          <div className="h-full md:hidden mobile-content-height mobile-content-wrapper">
+            {renderMobileContent()}
           </div>
 
           {/* Tablet Layout */}
@@ -262,12 +282,6 @@ const Layout = () => {
             </section>
           </div>
         </main>
-
-        {/* Mobile Navigation */}
-        <MobileNavigation 
-          activeTab={mobileActivePanel} 
-          onTabChange={setMobileActivePanel} 
-        />
       </div>
     </div>
   )
