@@ -1,11 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useMemo, useReducer } from 'react'
-import { parse } from 'yaml'
 import {
   DEFAULT_GENERATOR_OPTIONS,
   generateCodeArtifacts,
   normaliseVariablePayload,
 } from '../services/codeGenerator.js'
+import { getVariableSource, saveVariableSource } from '../utils/storage.js'
+import { parseYamlToState, cleanInitvarFormat, generateExampleVariables } from '../utils/yamlParser.js'
 
 export const INITIAL_VARIABLE_SOURCE = `metadata:
   title: 极光旅店状态栏
@@ -53,28 +54,15 @@ const ACTIONS = {
   SET_USER_OPTIONS: 'SET_USER_OPTIONS',
   SET_AI_RESPONSE: 'SET_AI_RESPONSE',
   GENERATE_CODE: 'GENERATE_CODE',
+  LOAD_EXAMPLE_VARIABLES: 'LOAD_EXAMPLE_VARIABLES',
+  PASTE_INITVAR_CONTENT: 'PASTE_INITVAR_CONTENT',
+  RESET_VARIABLES: 'RESET_VARIABLES',
 }
 
 const isPlainObject = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 
 function safeParseVariables(source) {
-  if (!source || !source.trim()) {
-    return { parsed: {}, error: null }
-  }
-
-  try {
-    const parsed = parse(source)
-    if (isPlainObject(parsed)) {
-      return { parsed, error: null }
-    }
-
-    return {
-      parsed: {},
-      error: new Error('变量内容需为 YAML 对象结构'),
-    }
-  } catch (error) {
-    return { parsed: null, error }
-  }
+  return parseYamlToState(source)
 }
 
 function mergeGeneratorOptions(baseOptions = DEFAULT_GENERATOR_OPTIONS, patch = {}) {
@@ -109,7 +97,9 @@ function deriveOptionsFromVariables(parsed, fallbackOptions) {
   return mergeGeneratorOptions(fallbackOptions, candidate)
 }
 
-const initialParseResult = safeParseVariables(INITIAL_VARIABLE_SOURCE)
+// Load saved variable source from storage or use initial example
+const savedVariableSource = getVariableSource() || INITIAL_VARIABLE_SOURCE
+const initialParseResult = safeParseVariables(savedVariableSource)
 const initialNormalised = normaliseVariablePayload(initialParseResult.parsed || {})
 const baseGeneratorOptions = mergeGeneratorOptions(DEFAULT_GENERATOR_OPTIONS, {})
 const derivedInitialOptions = deriveOptionsFromVariables(initialParseResult.parsed, baseGeneratorOptions)
@@ -120,7 +110,7 @@ const initialArtifacts = generateCodeArtifacts({
 })
 
 const initialState = {
-  variableSource: INITIAL_VARIABLE_SOURCE,
+  variableSource: savedVariableSource,
   variableParseError: initialParseResult.error ? initialParseResult.error.message : null,
   parsedVariables: initialParseResult.parsed || {},
   statData: initialNormalised.statData,
@@ -197,6 +187,82 @@ function reducer(state, action) {
         triggers: triggers ?? state.triggers,
       }
     }
+    case ACTIONS.LOAD_EXAMPLE_VARIABLES: {
+      const exampleSource = generateExampleVariables()
+      const result = safeParseVariables(exampleSource)
+      
+      // Save to storage
+      saveVariableSource(exampleSource)
+
+      if (result.error) {
+        return {
+          ...state,
+          variableSource: exampleSource,
+          variableParseError: result.error.message,
+        }
+      }
+
+      const normalised = normaliseVariablePayload(result.parsed || {})
+      const derivedOptions = deriveOptionsFromVariables(result.parsed, state.userOptions)
+
+      return {
+        ...state,
+        variableSource: exampleSource,
+        variableParseError: null,
+        parsedVariables: result.parsed || {},
+        statData: normalised.statData,
+        metadata: normalised.metadata,
+        triggers: normalised.triggers,
+        userOptions: derivedOptions ?? state.userOptions,
+        lastParsedAt: new Date().toISOString(),
+      }
+    }
+    case ACTIONS.PASTE_INITVAR_CONTENT: {
+      const { content } = action.payload
+      const cleanedContent = cleanInitvarFormat(content)
+      const result = safeParseVariables(cleanedContent)
+      
+      // Save to storage
+      saveVariableSource(cleanedContent)
+
+      if (result.error) {
+        return {
+          ...state,
+          variableSource: cleanedContent,
+          variableParseError: result.error.message,
+        }
+      }
+
+      const normalised = normaliseVariablePayload(result.parsed || {})
+      const derivedOptions = deriveOptionsFromVariables(result.parsed, state.userOptions)
+
+      return {
+        ...state,
+        variableSource: cleanedContent,
+        variableParseError: null,
+        parsedVariables: result.parsed || {},
+        statData: normalised.statData,
+        metadata: normalised.metadata,
+        triggers: normalised.triggers,
+        userOptions: derivedOptions ?? state.userOptions,
+        lastParsedAt: new Date().toISOString(),
+      }
+    }
+    case ACTIONS.RESET_VARIABLES: {
+      const resetSource = ''
+      saveVariableSource(resetSource)
+      
+      return {
+        ...state,
+        variableSource: resetSource,
+        variableParseError: null,
+        parsedVariables: {},
+        statData: {},
+        metadata: {},
+        triggers: [],
+        lastParsedAt: null,
+      }
+    }
     default:
       return state
   }
@@ -208,6 +274,9 @@ export function AppStateProvider({ children }) {
   const updateVariableSource = useCallback(
     (nextSource) => {
       const result = safeParseVariables(nextSource)
+
+      // Save to storage
+      saveVariableSource(nextSource)
 
       if (result.error) {
         dispatch({
@@ -286,6 +355,21 @@ export function AppStateProvider({ children }) {
     [state.aiAssistantResponse, state.parsedVariables, state.userOptions],
   )
 
+  const loadExampleVariables = useCallback(() => {
+    dispatch({ type: ACTIONS.LOAD_EXAMPLE_VARIABLES })
+  }, [])
+
+  const pasteInitvarContent = useCallback((content) => {
+    dispatch({ 
+      type: ACTIONS.PASTE_INITVAR_CONTENT, 
+      payload: { content } 
+    })
+  }, [])
+
+  const resetVariables = useCallback(() => {
+    dispatch({ type: ACTIONS.RESET_VARIABLES })
+  }, [])
+
   const value = useMemo(
     () => ({
       state,
@@ -294,9 +378,12 @@ export function AppStateProvider({ children }) {
         updateUserOptions,
         setAiAssistantResponse,
         generateCode,
+        loadExampleVariables,
+        pasteInitvarContent,
+        resetVariables,
       },
     }),
-    [generateCode, setAiAssistantResponse, state, updateUserOptions, updateVariableSource],
+    [generateCode, setAiAssistantResponse, state, updateUserOptions, updateVariableSource, loadExampleVariables, pasteInitvarContent, resetVariables],
   )
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>
