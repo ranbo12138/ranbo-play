@@ -6,15 +6,21 @@ import React, {
   useState,
 } from 'react';
 import { createChatCompletion } from '../services/openai';
+import CodeEditor from './CodeEditor.jsx';
 import {
   clearApiSettings,
   clearChatHistory,
   clearVariableSummary,
+  deleteCodeTemplate,
   getApiSettings,
   getChatHistory,
+  getCodeTemplate,
+  getCodeTemplates,
   getVariableSummary,
+  renameCodeTemplate,
   saveApiSettings,
   saveChatHistory,
+  saveCodeTemplate,
   saveVariableSummary,
 } from '../storage';
 import {
@@ -22,6 +28,10 @@ import {
   assemblePrompt,
   parseVariableSummary,
 } from '../utils/prompts';
+import {
+  extractArtifactsFromContent,
+  normaliseArtifacts,
+} from '../utils/workspace.js';
 
 const PROVIDER_PRESETS = {
   openai: {
@@ -104,6 +114,12 @@ const styles = {
     flexDirection: 'column',
     flex: 1,
     overflow: 'hidden',
+  },
+  workspaceWrapper: {
+    flex: '0 0 auto',
+    padding: '16px 20px',
+    background: '#f8fafc',
+    borderBottom: '1px solid #e2e8f0',
   },
   contextShelf: {
     padding: '12px 20px',
@@ -393,6 +409,23 @@ const ChatInterface = () => {
   const [parsedSummary, setParsedSummary] = useState(summarySeedRef.current.parsed || {});
   const [summaryUpdatedAt, setSummaryUpdatedAt] = useState(summarySeedRef.current.updatedAt || null);
   const [lastRequest, setLastRequest] = useState(null);
+  const [artifacts, setArtifacts] = useState(() => normaliseArtifacts());
+  const [artifactBaseline, setArtifactBaseline] = useState(() => normaliseArtifacts());
+  const [workspaceMeta, setWorkspaceMeta] = useState({
+    source: 'manual',
+    templateName: null,
+    updatedAt: null,
+    messageId: null,
+  });
+  const [currentTemplateName, setCurrentTemplateName] = useState('');
+  const [templates, setTemplates] = useState(() => {
+    try {
+      return getCodeTemplates();
+    } catch (error) {
+      console.warn('[ChatInterface] Failed to read code templates', error);
+      return [];
+    }
+  });
 
   const messagesEndRef = useRef(null);
   const abortControllerRef = useRef(null);
@@ -405,6 +438,15 @@ const ChatInterface = () => {
 
   const hasInputValue = useMemo(() => Boolean(inputValue.trim()), [inputValue]);
   const isSendDisabled = isLoading || !hasApiCredentials || !hasInputValue;
+  const latestAssistantMessage = useMemo(() => {
+    for (let index = chatHistory.length - 1; index >= 0; index -= 1) {
+      const message = chatHistory[index];
+      if (message.role === 'assistant') {
+        return message;
+      }
+    }
+    return null;
+  }, [chatHistory]);
 
   useEffect(() => {
     saveApiSettings(apiSettings);
@@ -413,6 +455,34 @@ const ChatInterface = () => {
   useEffect(() => {
     saveChatHistory(chatHistory);
   }, [chatHistory]);
+
+  useEffect(() => {
+    if (!latestAssistantMessage) {
+      return;
+    }
+
+    const hasArtifactsContent = Object.values(artifacts).some((value) =>
+      Boolean(value && value.trim())
+    );
+
+    if (
+      workspaceMeta.messageId ||
+      hasArtifactsContent ||
+      workspaceMeta.source !== 'manual' ||
+      workspaceMeta.templateName
+    ) {
+      return;
+    }
+
+    updateWorkspaceFromAssistant(latestAssistantMessage.id, latestAssistantMessage.content);
+  }, [
+    artifacts,
+    latestAssistantMessage,
+    updateWorkspaceFromAssistant,
+    workspaceMeta.messageId,
+    workspaceMeta.source,
+    workspaceMeta.templateName,
+  ]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -508,6 +578,52 @@ const ChatInterface = () => {
 
   const resetPromptPreview = useCallback(() => {
     setPromptPreview({ system: '', user: '', contextSections: [] });
+  }, []);
+
+  const updateWorkspaceFromAssistant = useCallback((messageId, content) => {
+    if (!content) {
+      return;
+    }
+
+    const extracted = extractArtifactsFromContent(content);
+    if (!extracted || Object.keys(extracted).length === 0) {
+      return;
+    }
+
+    let snapshot = null;
+
+    setArtifacts((prev) => {
+      const updated = { ...prev };
+      let changed = false;
+
+      Object.entries(extracted).forEach(([key, value]) => {
+        if (typeof value === 'string' && (updated[key] ?? '') !== value) {
+          updated[key] = value;
+          changed = true;
+        }
+      });
+
+      if (!changed) {
+        return prev;
+      }
+
+      const nextSnapshot = { ...updated };
+      snapshot = nextSnapshot;
+      return nextSnapshot;
+    });
+
+    if (!snapshot) {
+      return;
+    }
+
+    setArtifactBaseline({ ...snapshot });
+    setWorkspaceMeta({
+      source: 'ai',
+      templateName: null,
+      updatedAt: new Date().toISOString(),
+      messageId,
+    });
+    setCurrentTemplateName('');
   }, []);
 
   const normaliseHeadersDraft = useCallback(() => {
@@ -739,6 +855,7 @@ const ChatInterface = () => {
                   : message
               )
             );
+            updateWorkspaceFromAssistant(currentAssistantId, finalContent);
           },
           onError: () => {
             setIsStreaming(false);
@@ -762,6 +879,7 @@ const ChatInterface = () => {
                 : message
             )
           );
+          updateWorkspaceFromAssistant(currentAssistantId, finalContent);
         }
       } catch (requestError) {
         const isAbort = requestError?.name === 'AbortError';
@@ -806,6 +924,7 @@ const ChatInterface = () => {
       isLoading,
       parsedSummary,
       resetPromptPreview,
+      updateWorkspaceFromAssistant,
     ]
   );
 
@@ -840,6 +959,153 @@ const ChatInterface = () => {
     setLastRequest(null);
     setError('');
   }, []);
+
+  const handleArtifactChange = useCallback((tabId, value) => {
+    const nextValue = value ?? '';
+    let didChange = false;
+
+    setArtifacts((prev) => {
+      const currentValue = prev?.[tabId] ?? '';
+      if (currentValue === nextValue) {
+        return prev;
+      }
+      didChange = true;
+      return {
+        ...prev,
+        [tabId]: nextValue,
+      };
+    });
+
+    if (didChange) {
+      setWorkspaceMeta((prevMeta) => ({
+        ...prevMeta,
+        source: 'manual',
+        updatedAt: new Date().toISOString(),
+      }));
+    }
+  }, []);
+
+  const handleTemplateSave = useCallback(
+    (name) => {
+      const result = saveCodeTemplate(name, artifacts);
+      setTemplates(result.templates);
+      const baselineSnapshot = { ...result.template.artifacts };
+      setArtifacts(baselineSnapshot);
+      setArtifactBaseline({ ...baselineSnapshot });
+      setWorkspaceMeta((prevMeta) => ({
+        ...prevMeta,
+        source: 'template',
+        templateName: result.template.name,
+        updatedAt: result.template.updatedAt || new Date().toISOString(),
+      }));
+      setCurrentTemplateName(result.template.name);
+      return result.template;
+    },
+    [artifacts]
+  );
+
+  const handleTemplateLoad = useCallback(
+    (name) => {
+      const trimmed = typeof name === 'string' ? name.trim() : '';
+      if (!trimmed) {
+        throw new Error('请选择要加载的模板。');
+      }
+
+      const template = getCodeTemplate(trimmed);
+      if (!template) {
+        throw new Error(`未找到模板「${trimmed}」。`);
+      }
+
+      const nextArtifacts = { ...template.artifacts };
+      setArtifacts(nextArtifacts);
+      setArtifactBaseline({ ...nextArtifacts });
+      setWorkspaceMeta((prevMeta) => ({
+        ...prevMeta,
+        source: 'template',
+        templateName: template.name,
+        updatedAt: template.updatedAt || new Date().toISOString(),
+        messageId: null,
+      }));
+      setCurrentTemplateName(template.name);
+      return template;
+    },
+    []
+  );
+
+  const handleTemplateRename = useCallback(
+    (from, to) => {
+      const result = renameCodeTemplate(from, to);
+      setTemplates(result.templates);
+      if (currentTemplateName === from) {
+        setCurrentTemplateName(result.template?.name || '');
+      }
+      if (workspaceMeta.templateName === from) {
+        setWorkspaceMeta((prevMeta) => ({
+          ...prevMeta,
+          templateName: result.template?.name || null,
+          updatedAt: result.template?.updatedAt || prevMeta.updatedAt,
+        }));
+      }
+      return result.template;
+    },
+    [currentTemplateName, workspaceMeta.templateName]
+  );
+
+  const handleTemplateDelete = useCallback(
+    (name) => {
+      const result = deleteCodeTemplate(name);
+      setTemplates(result.templates);
+      if (currentTemplateName === name) {
+        setCurrentTemplateName('');
+      }
+      if (workspaceMeta.templateName === name) {
+        setWorkspaceMeta((prevMeta) => ({
+          ...prevMeta,
+          source: 'manual',
+          templateName: null,
+          updatedAt: new Date().toISOString(),
+        }));
+      }
+      return result.removed;
+    },
+    [currentTemplateName, workspaceMeta.templateName]
+  );
+
+  const handleExportConfiguration = useCallback(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      throw new Error('当前环境不支持导出。');
+    }
+
+    const timestamp = new Date().toISOString();
+    const payload = {
+      exportedAt: timestamp,
+      workspace: {
+        source: workspaceMeta.source,
+        templateName: workspaceMeta.templateName || currentTemplateName || null,
+        updatedAt: workspaceMeta.updatedAt,
+        messageId: workspaceMeta.messageId,
+      },
+      artifacts,
+    };
+
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const safeName = (workspaceMeta.templateName || currentTemplateName || 'mvu-workspace')
+      .toString()
+      .toLowerCase()
+      .replace(/[^a-z0-9-_]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'mvu-workspace';
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${safeName}-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return payload;
+  }, [artifacts, workspaceMeta, currentTemplateName]);
 
   return (
     <div style={styles.container}>
@@ -956,6 +1222,22 @@ const ChatInterface = () => {
       </section>
 
       <div style={styles.body}>
+        <div style={styles.workspaceWrapper}>
+          <CodeEditor
+            artifacts={artifacts}
+            baseline={artifactBaseline}
+            meta={workspaceMeta}
+            templates={templates}
+            currentTemplate={currentTemplateName}
+            latestAssistantMessage={latestAssistantMessage}
+            onChange={handleArtifactChange}
+            onExport={handleExportConfiguration}
+            onSaveTemplate={handleTemplateSave}
+            onLoadTemplate={handleTemplateLoad}
+            onRenameTemplate={handleTemplateRename}
+            onDeleteTemplate={handleTemplateDelete}
+          />
+        </div>
         <div style={styles.chatScroll}>
           {chatHistory.length === 0 && (
             <div

@@ -1,7 +1,10 @@
+import { normaliseArtifacts } from './utils/workspace.js';
+
 const STORAGE_NAMESPACE = 'mvuChat';
 const API_SETTINGS_KEY = `${STORAGE_NAMESPACE}:apiSettings`;
 const CHAT_HISTORY_KEY = `${STORAGE_NAMESPACE}:chatHistory`;
 const VARIABLE_SUMMARY_KEY = `${STORAGE_NAMESPACE}:variableSummary`;
+const CODE_TEMPLATES_KEY = `${STORAGE_NAMESPACE}:codeTemplates`;
 
 const DEFAULT_SETTINGS = {
   providerType: 'openai',
@@ -241,4 +244,232 @@ export function clearVariableSummary() {
     parsed: {},
     updatedAt: null,
   });
+}
+
+function cloneArtifacts(artifacts = {}) {
+  return { ...normaliseArtifacts(artifacts) };
+}
+
+function sanitiseTemplateEntry(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+
+  const name = `${entry.name || ''}`.trim();
+  if (!name) {
+    return null;
+  }
+
+  const artifacts = cloneArtifacts(entry.artifacts);
+
+  let createdAt = typeof entry.createdAt === 'string' && entry.createdAt ? entry.createdAt : null;
+  let updatedAt = typeof entry.updatedAt === 'string' && entry.updatedAt ? entry.updatedAt : null;
+
+  if (!createdAt && updatedAt) {
+    createdAt = updatedAt;
+  } else if (!updatedAt && createdAt) {
+    updatedAt = createdAt;
+  } else if (!createdAt && !updatedAt) {
+    const timestamp = new Date().toISOString();
+    createdAt = timestamp;
+    updatedAt = timestamp;
+  }
+
+  const template = {
+    name,
+    artifacts,
+    createdAt,
+    updatedAt,
+  };
+
+  if (typeof entry.description === 'string' && entry.description.trim()) {
+    template.description = entry.description.trim();
+  }
+
+  return template;
+}
+
+function readCodeTemplates() {
+  const stored = readJSON(CODE_TEMPLATES_KEY, []);
+  if (!Array.isArray(stored)) return [];
+  return stored.map(sanitiseTemplateEntry).filter(Boolean);
+}
+
+function writeCodeTemplates(templates = []) {
+  const payload = templates.map((template) => {
+    const base = {
+      name: template.name,
+      artifacts: cloneArtifacts(template.artifacts),
+      createdAt: template.createdAt,
+      updatedAt: template.updatedAt,
+    };
+
+    if (template.description) {
+      base.description = template.description;
+    }
+
+    return base;
+  });
+
+  return writeJSON(CODE_TEMPLATES_KEY, payload);
+}
+
+function sortTemplates(templates = []) {
+  return [...templates].sort((a, b) => {
+    const timeA = new Date(a?.updatedAt || a?.createdAt || 0).getTime();
+    const timeB = new Date(b?.updatedAt || b?.createdAt || 0).getTime();
+    return timeB - timeA;
+  });
+}
+
+function formatTemplatesForReturn(templates = []) {
+  return templates.map((template) => ({
+    ...template,
+    artifacts: cloneArtifacts(template.artifacts),
+  }));
+}
+
+export function getCodeTemplates() {
+  const templates = sortTemplates(readCodeTemplates());
+  return formatTemplatesForReturn(templates);
+}
+
+export function getCodeTemplate(name) {
+  const trimmedName = typeof name === 'string' ? name.trim() : '';
+  if (!trimmedName) {
+    return null;
+  }
+
+  const templates = readCodeTemplates();
+  const match = templates.find((template) => template.name === trimmedName);
+  return match ? { ...match, artifacts: cloneArtifacts(match.artifacts) } : null;
+}
+
+export function saveCodeTemplate(name, artifacts = {}, metadata = {}) {
+  const trimmedName = typeof name === 'string' ? name.trim() : '';
+  if (!trimmedName) {
+    throw new Error('Template name is required');
+  }
+
+  const templates = readCodeTemplates();
+  const timestamp = new Date().toISOString();
+  const description =
+    typeof metadata.description === 'string' && metadata.description.trim()
+      ? metadata.description.trim()
+      : undefined;
+  const normalisedArtifacts = cloneArtifacts(artifacts);
+
+  const existingIndex = templates.findIndex((template) => template.name === trimmedName);
+  let target;
+
+  if (existingIndex >= 0) {
+    const existing = templates[existingIndex];
+    target = {
+      ...existing,
+      name: trimmedName,
+      artifacts: normalisedArtifacts,
+      updatedAt: timestamp,
+    };
+
+    if (!target.createdAt) {
+      target.createdAt = existing.createdAt || timestamp;
+    }
+
+    if (description !== undefined) {
+      target.description = description;
+    }
+
+    templates[existingIndex] = target;
+  } else {
+    target = {
+      name: trimmedName,
+      artifacts: normalisedArtifacts,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    if (description !== undefined) {
+      target.description = description;
+    }
+
+    templates.push(target);
+  }
+
+  const sorted = sortTemplates(templates);
+  writeCodeTemplates(sorted);
+
+  return {
+    template: { ...target, artifacts: cloneArtifacts(target.artifacts) },
+    templates: formatTemplatesForReturn(sorted),
+  };
+}
+
+export function deleteCodeTemplate(name) {
+  const trimmedName = typeof name === 'string' ? name.trim() : '';
+  if (!trimmedName) {
+    return {
+      removed: null,
+      templates: formatTemplatesForReturn(sortTemplates(readCodeTemplates())),
+    };
+  }
+
+  const templates = readCodeTemplates();
+  const index = templates.findIndex((template) => template.name === trimmedName);
+
+  if (index === -1) {
+    return {
+      removed: null,
+      templates: formatTemplatesForReturn(sortTemplates(templates)),
+    };
+  }
+
+  const [removed] = templates.splice(index, 1);
+  const sorted = sortTemplates(templates);
+  writeCodeTemplates(sorted);
+
+  return {
+    removed: removed ? { ...removed, artifacts: cloneArtifacts(removed.artifacts) } : null,
+    templates: formatTemplatesForReturn(sorted),
+  };
+}
+
+export function renameCodeTemplate(oldName, newName) {
+  const from = typeof oldName === 'string' ? oldName.trim() : '';
+  const to = typeof newName === 'string' ? newName.trim() : '';
+
+  if (!from || !to) {
+    throw new Error('Both template names are required');
+  }
+
+  const templates = readCodeTemplates();
+  const index = templates.findIndex((template) => template.name === from);
+
+  if (index === -1) {
+    throw new Error(`Template "${from}" not found`);
+  }
+
+  const timestamp = new Date().toISOString();
+  const current = templates[index];
+
+  const updatedTemplate = {
+    ...current,
+    name: to,
+    artifacts: cloneArtifacts(current.artifacts),
+    updatedAt: timestamp,
+  };
+
+  if (!updatedTemplate.createdAt) {
+    updatedTemplate.createdAt = current.createdAt || timestamp;
+  }
+
+  const withoutConflicts = templates.filter(
+    (template, idx) => idx !== index && template.name !== to
+  );
+  withoutConflicts.push(updatedTemplate);
+
+  const sorted = sortTemplates(withoutConflicts);
+  writeCodeTemplates(sorted);
+
+  return {
+    template: { ...updatedTemplate, artifacts: cloneArtifacts(updatedTemplate.artifacts) },
+    templates: formatTemplatesForReturn(sorted),
+  };
 }
