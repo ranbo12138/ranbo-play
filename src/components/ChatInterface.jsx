@@ -37,10 +37,72 @@ const PROVIDER_PRESETS = {
     baseUrl: 'https://openrouter.ai/api/v1',
   },
   custom: {
-    label: 'Custom',
+    label: '自定义',
     baseUrl: '',
   },
 };
+
+const ROLE_LABELS = {
+  user: '用户',
+  assistant: '助手',
+  system: '系统',
+};
+
+function translateErrorMessage(message) {
+  if (!message) return '';
+  const trimmed = `${message}`.trim();
+  if (!trimmed) return '';
+
+  const normalized = trimmed.toLowerCase();
+
+  if (normalized.includes('failed to fetch') || normalized.includes('networkerror')) {
+    return '网络请求失败，请检查连接。';
+  }
+
+  if (normalized.includes('timeout')) {
+    return '请求超时，请稍后重试。';
+  }
+
+  if (normalized.includes('unauthorized') || normalized.includes('401')) {
+    return '认证失败，请检查 API 凭据。';
+  }
+
+  if (normalized.includes('forbidden') || normalized.includes('403')) {
+    return '权限不足，请检查 API 凭据。';
+  }
+
+  if (normalized.includes('not found') || normalized.includes('404')) {
+    return '未找到目标接口，请检查基础 URL。';
+  }
+
+  if (
+    normalized.includes('bad gateway') ||
+    normalized.includes('service unavailable') ||
+    normalized.includes('gateway timeout') ||
+    normalized.includes('502') ||
+    normalized.includes('503') ||
+    normalized.includes('504')
+  ) {
+    return '服务暂时不可用，请稍后重试。';
+  }
+
+  if (
+    normalized.includes('invalid json response body') ||
+    normalized.includes('unexpected end of json input')
+  ) {
+    return '接口返回的 JSON 数据无效。';
+  }
+
+  if (normalized.includes('ssl') || normalized.includes('certificate') || normalized.includes('handshake')) {
+    return 'SSL 连接失败，请检查网络或证书配置。';
+  }
+
+  if (/[A-Za-z]/.test(trimmed)) {
+    return '';
+  }
+
+  return trimmed;
+}
 
 const styles = {
   container: {
@@ -520,10 +582,14 @@ const ChatInterface = () => {
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
         return parsed;
       }
-      throw new Error('Headers must be a JSON object');
+      throw new Error('请求头必须是 JSON 对象');
     } catch (parseError) {
-      setSettingsError(parseError.message);
-      throw parseError;
+      const message =
+        parseError.message === '请求头必须是 JSON 对象'
+          ? parseError.message
+          : '自定义请求头必须是合法的 JSON 对象。';
+      setSettingsError(message);
+      throw new Error(message);
     }
   }, [headersInput]);
 
@@ -636,7 +702,8 @@ const ChatInterface = () => {
           context: contextToUse,
         });
       } catch (assemblyError) {
-        setError(assemblyError.message || '无法构建提示。');
+        const message = translateErrorMessage(assemblyError.message) || '无法构建提示。';
+        setError(message);
         return;
       }
 
@@ -768,9 +835,10 @@ const ChatInterface = () => {
         if (!isAbort) {
           console.error('[ChatInterface] Chat request failed', requestError);
         }
+        const localizedError = translateErrorMessage(requestError?.message);
         const message = isAbort
           ? '请求已取消。'
-          : requestError?.message || '请求失败，请稍后重试。';
+          : localizedError || '请求失败，请稍后重试。';
         setError(message);
         setChatHistoryState((prev) =>
           prev.map((item) =>
@@ -844,7 +912,7 @@ const ChatInterface = () => {
   return (
     <div style={styles.container}>
       <header style={styles.header}>
-        <div style={styles.title}>MVU Chat Companion</div>
+        <div style={styles.title}>MVU 聊天助手</div>
         <div style={styles.headerActions}>
           <button
             type="button"
@@ -943,11 +1011,11 @@ const ChatInterface = () => {
           <div style={styles.previewPanel}>
             <strong>提示预览（手动刷新）</strong>
             <br />
-            <span style={{ color: '#475569' }}>System:</span>
+            <span style={{ color: '#475569' }}>系统：</span>
             <pre style={{ whiteSpace: 'pre-wrap', margin: '4px 0', fontSize: '12px' }}>
               {promptPreview.system}
             </pre>
-            <span style={{ color: '#475569' }}>User:</span>
+            <span style={{ color: '#475569' }}>用户：</span>
             <pre style={{ whiteSpace: 'pre-wrap', margin: '4px 0', fontSize: '12px' }}>
               {promptPreview.user}
             </pre>
@@ -990,11 +1058,13 @@ const ChatInterface = () => {
               ? ' · 错误'
               : '';
 
+            const roleLabel = ROLE_LABELS[role] || role.toUpperCase();
+
             return (
               <div key={message.id} style={baseStyle}>
                 <div style={styles.messageMeta}>
                   <span>
-                    {role.toUpperCase()}
+                    {roleLabel}
                     {statusLabel}
                   </span>
                   <span>{formatTimestamp(message.timestamp)}</span>
@@ -1114,7 +1184,7 @@ const ChatInterface = () => {
 
             <div style={styles.fieldGroup}>
               <label style={styles.label} htmlFor="baseUrl">
-                Base URL
+                基础 URL
               </label>
               <input
                 id="baseUrl"
@@ -1128,7 +1198,7 @@ const ChatInterface = () => {
 
             <div style={styles.fieldGroup}>
               <label style={styles.label} htmlFor="apiKey">
-                API Key
+                API 密钥
               </label>
               <input
                 id="apiKey"

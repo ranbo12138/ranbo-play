@@ -84,7 +84,7 @@ const Layout = () => {
             <div className="flex h-full flex-col gap-4">
               <div className="panel-header">
                 <h2 className="panel-title">模板输出</h2>
-                <span className="tag">Code</span>
+                <span className="tag">代码</span>
               </div>
               <p className="text-sm text-muted">
                 Tailwind 主题与 MVU 模板片段将在此生成，便于复制到 TavernAI 或其他部署环境。

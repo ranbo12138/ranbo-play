@@ -75,14 +75,14 @@ async function parseJSONResponse(response) {
   try {
     payload = await response.json();
   } catch (error) {
-    throw new OpenAIServiceError('Unable to parse JSON response', {
+    throw new OpenAIServiceError('无法解析 JSON 响应', {
       status: response.status,
       details: error,
     });
   }
 
   if (!response.ok) {
-    throw new OpenAIServiceError(payload?.error?.message || 'OpenAI request failed', {
+    throw new OpenAIServiceError(payload?.error?.message || 'OpenAI 请求失败', {
       status: response.status,
       code: payload?.error?.code,
       details: payload,
@@ -110,7 +110,7 @@ async function executeStreamingRequest(url, requestInit, { onToken, onComplete }
   }
 
   if (!response.body || typeof response.body.getReader !== 'function') {
-    throw new OpenAIServiceError('Streaming unsupported by this environment');
+    throw new OpenAIServiceError('当前环境不支持流式传输');
   }
 
   const reader = response.body.getReader();
@@ -174,7 +174,7 @@ export async function createChatCompletion({
   body: bodyOverrides = {},
 } = {}) {
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
-    throw new OpenAIServiceError('Missing chat messages payload');
+    throw new OpenAIServiceError('缺少聊天消息数据');
   }
 
   const url = `${normaliseBaseUrl(baseUrl)}${buildEndpointPath(endpointPath)}`;

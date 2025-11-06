@@ -3,7 +3,7 @@ const ChatInterface = () => {
     <div className="flex h-full flex-col gap-4">
       <div className="panel-header">
         <h2 className="panel-title">对话调试</h2>
-        <span className="tag">Chat Ops</span>
+        <span className="tag">聊天调试</span>
       </div>
       <p className="text-sm text-muted">
         在此验证状态栏变量于实际对话流程中的表现，快速捕捉上下文缺失与响应异常。

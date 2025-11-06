@@ -138,7 +138,7 @@ export function assemblePrompt({
   includeSystem = true,
 } = {}) {
   if (!userInput || !userInput.trim()) {
-    throw new Error('assemblePrompt requires userInput');
+    throw new Error('assemblePrompt 需要传入用户输入');
   }
 
   const parsedSummary = variableSummary?.parsed
@@ -184,7 +184,7 @@ export function assemblePrompt({
 }
 
 export const MVU_CONTEXT_ACTIONS = [
-  { id: 'statData', label: 'Include stat_data summary', macro: CONTEXT_MACROS.statData },
-  { id: 'lorebook', label: 'Include world book snapshot', macro: CONTEXT_MACROS.lorebook },
-  { id: 'memory', label: 'Include memory shards', macro: CONTEXT_MACROS.memory },
+  { id: 'statData', label: '包含 stat_data 摘要', macro: CONTEXT_MACROS.statData },
+  { id: 'lorebook', label: '包含世界书快照', macro: CONTEXT_MACROS.lorebook },
+  { id: 'memory', label: '包含记忆碎片', macro: CONTEXT_MACROS.memory },
 ];

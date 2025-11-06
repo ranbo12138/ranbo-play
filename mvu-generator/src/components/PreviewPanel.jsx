@@ -3,7 +3,7 @@ const PreviewPanel = () => {
     <div className="flex h-full flex-col gap-4">
       <div className="panel-header">
         <h2 className="panel-title">实时预览</h2>
-        <span className="tag">Preview</span>
+        <span className="tag">预览</span>
       </div>
       <p className="text-sm text-muted">
         预览状态栏在亮色与暗色主题下的最终呈现，确保布局与色彩一致。
